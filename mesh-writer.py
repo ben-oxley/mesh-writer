@@ -20,6 +20,16 @@ class Point3:
 
 
 @dataclass
+class Point6:
+    x: float
+    y: float
+    z: float
+    r: float
+    g: float
+    b: float
+
+
+@dataclass
 class Point4:
     x: float
     y: float
@@ -64,7 +74,7 @@ class Object:
 
 
 def wiggle(i, j):
-    return 20 * math.sin(i / 20.0) + 20 * math.sin(j / 20.0)
+    return 1.0 * math.sin(i / 20.0) + 1.0 * math.sin(j / 20.0)
 
 
 def create_surface():
@@ -74,41 +84,186 @@ def create_surface():
     verticies: list[Point3] = []
     faces: list[Face] = []
 
-    xlen = 100
+    xlen = 50
     ylen = 100
     texture = []
     texture.append(TexCoord(0.0, 0.0))
     texture.append(TexCoord(1.0, 0.0))
     texture.append(TexCoord(0.0, 1.0))
     texture.append(TexCoord(1.0, 1.0))
-    # Create a surface for the obj
-    for i in range(0, xlen):
-        for j in range(0, ylen):
-            verticies.append(Point3(i, j, 0))
-            # Join bl, tr, br
-            if i < xlen - 1 and j < ylen - 1:
-                faces.append(
-                    Face(
-                        vertex_indices=[
-                            i * ylen + j,
-                            i * ylen + j + 1,
-                            (i + 1) * ylen + j,
-                        ],
-                        vertex_normal_indices=[],
-                        texture_vertex_indices=[0, 1, 2],
+
+    # Create top surface for the obj
+    def create_surface(top: bool, height_offset: float):
+        vertex_offset = len(verticies)
+        for i in range(0, xlen):
+            for j in range(0, ylen):
+                verticies.append(
+                    Point6(
+                        i,
+                        j,
+                        height_offset + wiggle(i, j),
+                        i / 255.0,
+                        j / 255.0,
+                        i / 255.0,
                     )
                 )
-                faces.append(
-                    Face(
-                        vertex_indices=[
-                            (i + 1) * ylen + j,
-                            i * ylen + j + 1,
-                            (i + 1) * ylen + j + 1,
-                        ],
-                        vertex_normal_indices=[],
-                        texture_vertex_indices=[2, 1, 3],
-                    )
+                # Join bl, tr, br
+                if i < xlen - 1 and j < ylen - 1:
+                    if top:
+                        faces.append(
+                            Face(
+                                vertex_indices=[
+                                    vertex_offset + i * ylen + j,
+                                    vertex_offset + i * ylen + j + 1,
+                                    vertex_offset + (i + 1) * ylen + j,
+                                ],
+                                vertex_normal_indices=[],
+                                texture_vertex_indices=[0, 1, 2],
+                            )
+                        )
+                        faces.append(
+                            Face(
+                                vertex_indices=[
+                                    vertex_offset + (i + 1) * ylen + j,
+                                    vertex_offset + i * ylen + j + 1,
+                                    vertex_offset + (i + 1) * ylen + j + 1,
+                                ],
+                                vertex_normal_indices=[],
+                                texture_vertex_indices=[2, 1, 3],
+                            )
+                        )
+                    else:
+                        faces.append(
+                            Face(
+                                vertex_indices=[
+                                    vertex_offset + i * ylen + j,
+                                    vertex_offset + (i + 1) * ylen + j,
+                                    vertex_offset + i * ylen + j + 1,
+                                ],
+                                vertex_normal_indices=[],
+                                texture_vertex_indices=[0, 1, 2],
+                            )
+                        )
+                        faces.append(
+                            Face(
+                                vertex_indices=[
+                                    vertex_offset + (i + 1) * ylen + j,
+                                    vertex_offset + (i + 1) * ylen + j + 1,
+                                    vertex_offset + i * ylen + j + 1,
+                                ],
+                                vertex_normal_indices=[],
+                                texture_vertex_indices=[2, 1, 3],
+                            )
+                        )
+
+    create_surface(True, 10.0)
+    create_surface(True, 0.0)
+
+    def create_sides():
+        # Top and bottom
+        for i in range(0, xlen - 1):
+            faces.append(
+                Face(
+                    vertex_indices=[
+                        i + 1,
+                        i,
+                        xlen * ylen + i,
+                    ],
+                    vertex_normal_indices=[],
+                    texture_vertex_indices=[0, 1, 2],
                 )
+            )
+            faces.append(
+                Face(
+                    vertex_indices=[
+                        xlen * ylen + i,
+                        xlen * ylen + i + 1,
+                        i + 1,
+                    ],
+                    vertex_normal_indices=[],
+                    texture_vertex_indices=[2, 3, 0],
+                )
+            )
+            # Top Side
+            faces.append(
+                Face(
+                    vertex_indices=[
+                        xlen * (ylen - 1) + i,
+                        xlen * (ylen - 1) + i + 1,
+                        (xlen * ylen) + (xlen * (ylen - 1) + i),
+                    ],
+                    vertex_normal_indices=[],
+                    texture_vertex_indices=[0, 1, 2],
+                )
+            )
+            faces.append(
+                Face(
+                    vertex_indices=[
+                        xlen * (ylen - 1) + i + 1,
+                        (xlen * ylen) + (xlen * (ylen - 1) + i + 1),
+                        (xlen * ylen) + (xlen * (ylen - 1) + i),
+                    ],
+                    vertex_normal_indices=[],
+                    texture_vertex_indices=[0, 1, 2],
+                )
+            )
+        for i in range(0, ylen - 1):
+            # Left Side
+            faces.append(
+                Face(
+                    vertex_indices=[
+                        i * xlen,
+                        (i + 1) * xlen,
+                        xlen * ylen + i * xlen,
+                    ],
+                    vertex_normal_indices=[],
+                    texture_vertex_indices=[0, 1, 2],
+                )
+            )
+            faces.append(
+                Face(
+                    vertex_indices=[
+                        xlen * ylen + i * xlen,
+                        xlen * ylen + (i + 1) * xlen,
+                        (i + 1) * xlen,
+                    ],
+                    vertex_normal_indices=[],
+                    texture_vertex_indices=[2, 3, 0],
+                )
+            )
+            # Right Side
+            faces.append(
+                Face(
+                    vertex_indices=[
+                        ((i + 1) * xlen) + (xlen - 1),
+                        (i * xlen) + (xlen - 1),
+                        (xlen * ylen) + ((i + 1) * xlen) + (xlen - 1),
+                    ],
+                    vertex_normal_indices=[],
+                    texture_vertex_indices=[0, 1, 2],
+                )
+            )
+            faces.append(
+                Face(
+                    vertex_indices=[
+                        (xlen * ylen) + ((i + 1) * xlen) + (xlen - 1),
+                        (i * xlen) + (xlen - 1),
+                        (xlen * ylen) + (i * xlen) + (xlen - 1),
+                    ],
+                    vertex_normal_indices=[],
+                    texture_vertex_indices=[2, 3, 0],
+                )
+            )
+
+        # Bottom side will stitch together node 0,1,x*y,x*y+1 etc e.g in a (4x,3y) 0,1,12,13
+        # Top side will stitch together (x*(y-1)),(x*(y-1)+1), x*y+(x*(y-1)) and x*y+(x*(y-1)+1) e.g. in a (4x,3y) 8,9,20,21
+        # Left side will stitch together 0,x,x*y,x*y+x
+        # Right side will stitch together x-1,x*y-1,x*y+x-1,x*y+x
+
+        side_offset = xlen * ylen
+
+    create_sides()
+
     material = Material(colour=RGB(r=0.0, g=1.0, b=0.0))
     return Object(
         name="surface",
@@ -131,6 +286,8 @@ def write_object(obj: Object, filename: str):
                 f.write(f"v {v.x} {v.y} {v.z}\n")
             elif isinstance(v, Point4):
                 f.write(f"v {v.x} {v.y} {v.z} {v.w}\n")
+            elif isinstance(v, Point6):
+                f.write(f"v {v.x} {v.y} {v.z} {v.r} {v.g} {v.b}\n")
         for n in obj.vertex_normals:
             f.write(f"vn {n.x} {n.y} {n.z}\n")
         for t in obj.texture_verticies:
@@ -141,8 +298,8 @@ def write_object(obj: Object, filename: str):
 
         f.write(f"g {obj_name}\n")
         f.write(f"usemtl {obj_name}\n")
+        print(len(obj.faces), "faces")
         for face in obj.faces:
-            print(len)
             if (
                 len(face.vertex_normal_indices) == 0
                 and len(face.texture_vertex_indices) == 0
