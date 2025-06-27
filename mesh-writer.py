@@ -10,6 +10,7 @@
 from dataclasses import dataclass
 import math
 from typing import Optional
+import random
 
 
 @dataclass
@@ -84,7 +85,7 @@ def create_surface():
     verticies: list[Point3] = []
     faces: list[Face] = []
 
-    xlen = 50
+    xlen = 100
     ylen = 100
     texture = []
     texture.append(TexCoord(0.0, 0.0))
@@ -102,9 +103,9 @@ def create_surface():
                         i,
                         j,
                         height_offset + wiggle(i, j),
-                        i / 255.0,
-                        j / 255.0,
-                        i / 255.0,
+                        random.uniform(0.0, 1.0),
+                        random.uniform(0.0, 1.0),
+                        random.uniform(0.0, 1.0),
                     )
                 )
                 # Join bl, tr, br
@@ -156,17 +157,17 @@ def create_surface():
                             )
                         )
 
-    create_surface(True, 10.0)
+    create_surface(False, 10.0)
     create_surface(True, 0.0)
 
     def create_sides():
         # Top and bottom
-        for i in range(0, xlen - 1):
+        for i in range(0, ylen - 1):
             faces.append(
                 Face(
                     vertex_indices=[
-                        i + 1,
                         i,
+                        i + 1,
                         xlen * ylen + i,
                     ],
                     vertex_normal_indices=[],
@@ -176,8 +177,8 @@ def create_surface():
             faces.append(
                 Face(
                     vertex_indices=[
-                        xlen * ylen + i,
                         xlen * ylen + i + 1,
+                        xlen * ylen + i,
                         i + 1,
                     ],
                     vertex_normal_indices=[],
@@ -188,9 +189,9 @@ def create_surface():
             faces.append(
                 Face(
                     vertex_indices=[
-                        xlen * (ylen - 1) + i,
-                        xlen * (ylen - 1) + i + 1,
-                        (xlen * ylen) + (xlen * (ylen - 1) + i),
+                        ((xlen - 1) * ylen) + i + 1,
+                        ((xlen - 1) * ylen) + i,
+                        (xlen * ylen) + (((xlen - 1) * ylen) + i),
                     ],
                     vertex_normal_indices=[],
                     texture_vertex_indices=[0, 1, 2],
@@ -199,22 +200,22 @@ def create_surface():
             faces.append(
                 Face(
                     vertex_indices=[
-                        xlen * (ylen - 1) + i + 1,
-                        (xlen * ylen) + (xlen * (ylen - 1) + i + 1),
-                        (xlen * ylen) + (xlen * (ylen - 1) + i),
+                        ((xlen - 1) * ylen) + i + 1,
+                        (xlen * ylen) + (((xlen - 1) * ylen) + i),
+                        (xlen * ylen) + (((xlen - 1) * ylen) + i + 1),
                     ],
                     vertex_normal_indices=[],
                     texture_vertex_indices=[0, 1, 2],
                 )
             )
-        for i in range(0, ylen - 1):
+        for i in range(0, xlen - 1):
             # Left Side
             faces.append(
                 Face(
                     vertex_indices=[
-                        i * xlen,
-                        (i + 1) * xlen,
-                        xlen * ylen + i * xlen,
+                        (i + 1) * ylen,
+                        i * ylen,
+                        xlen * ylen + i * ylen,
                     ],
                     vertex_normal_indices=[],
                     texture_vertex_indices=[0, 1, 2],
@@ -223,9 +224,9 @@ def create_surface():
             faces.append(
                 Face(
                     vertex_indices=[
-                        xlen * ylen + i * xlen,
-                        xlen * ylen + (i + 1) * xlen,
-                        (i + 1) * xlen,
+                        xlen * ylen + i * ylen,
+                        xlen * ylen + (i + 1) * ylen,
+                        (i + 1) * ylen,
                     ],
                     vertex_normal_indices=[],
                     texture_vertex_indices=[2, 3, 0],
@@ -235,9 +236,9 @@ def create_surface():
             faces.append(
                 Face(
                     vertex_indices=[
-                        ((i + 1) * xlen) + (xlen - 1),
-                        (i * xlen) + (xlen - 1),
-                        (xlen * ylen) + ((i + 1) * xlen) + (xlen - 1),
+                        (ylen - 1) + i * ylen,
+                        (ylen - 1) + (i + 1) * ylen,
+                        xlen * ylen + i * ylen + (ylen - 1),
                     ],
                     vertex_normal_indices=[],
                     texture_vertex_indices=[0, 1, 2],
@@ -246,12 +247,12 @@ def create_surface():
             faces.append(
                 Face(
                     vertex_indices=[
-                        (xlen * ylen) + ((i + 1) * xlen) + (xlen - 1),
-                        (i * xlen) + (xlen - 1),
-                        (xlen * ylen) + (i * xlen) + (xlen - 1),
+                        (ylen - 1) + (i + 1) * ylen,
+                        xlen * ylen + (ylen - 1) + (i + 1) * ylen,
+                        xlen * ylen + i * ylen + (ylen - 1),
                     ],
                     vertex_normal_indices=[],
-                    texture_vertex_indices=[2, 3, 0],
+                    texture_vertex_indices=[0, 1, 2],
                 )
             )
 
@@ -264,7 +265,7 @@ def create_surface():
 
     create_sides()
 
-    material = Material(colour=RGB(r=0.0, g=1.0, b=0.0))
+    material = Material(colour=RGB(r=255.0, g=255.0, b=255.0))
     return Object(
         name="surface",
         material=material,
@@ -300,6 +301,7 @@ def write_object(obj: Object, filename: str):
         f.write(f"usemtl {obj_name}\n")
         print(len(obj.faces), "faces")
         for face in obj.faces:
+            face.texture_vertex_indices = []
             if (
                 len(face.vertex_normal_indices) == 0
                 and len(face.texture_vertex_indices) == 0
